@@ -8,61 +8,50 @@ import {
   ActivityIndicator,
   StyleSheet,
 } from 'react-native';
-import axios, { AxiosError } from 'axios';
+import axios from 'axios';
 import { useRouter } from 'expo-router';
-import * as SecureStore from 'expo-secure-store';
+import * as Linking from 'expo-linking';
 
-const LoginScreen: React.FC = () => {
+
+const RegisterScreen: React.FC = () => {
+  const [name, setName] = useState('');
+  const [surname, setSurname] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
-  const saveUserData = async (userData: any) => {
-    try {
-      const { token, id } = userData;
-      await SecureStore.setItemAsync('token', token);
-      await SecureStore.setItemAsync('userId', id.toString());
-      await SecureStore.setItemAsync('userData', JSON.stringify(userData));
-    } catch (error) {
-      console.error('Error saving user data:', error);
-      throw error;
-    }
-  };
-
-  const handleLogin = async () => {
-    if (!email || !password) {
+  const handleRegister = async () => {
+    if (!name || !surname || !email || !password) {
       Alert.alert('Error', 'Por favor complete todos los campos');
       return;
     }
+
     setIsLoading(true);
     try {
       const response = await axios.post(
-        'http://192.168.18.89:8080/login', // Cambia a 10.0.2.2 si estás en un emulador
-        { email, password },
+        'http://192.168.18.89:8080/register', // Cambia a 10.0.2.2 si estás en un emulador
+        {
+          name,
+          surname,
+          email,
+          password,
+          role: 'CLIENT',
+        },
         {
           headers: { 'Content-Type': 'application/json' },
         }
       );
       if (response.data) {
-        await saveUserData(response.data);
-        router.replace('/(tabs)/home'); // Cambia a la ruta deseada
+        Alert.alert('Éxito', 'Registro exitoso. Ahora puedes iniciar sesión.');
+        Linking.openURL('/login');
       }
-    } catch (error: unknown) {
-      if (error instanceof AxiosError) {
-        console.error('Error:', error.response?.data || error.message);
-        Alert.alert('Error', error.response?.data?.message || 'Error al iniciar sesión');
-      } else {
-        console.error('Error:', error);
-        Alert.alert('Error', 'Ocurrió un error inesperado');
-      }
+    } catch (error) {
+      console.error('Error:', error);
+      Alert.alert('Error', 'Error al registrarse');
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const navigateToRegister = () => {
-    router.push('/register');
   };
 
   if (isLoading) {
@@ -75,6 +64,22 @@ const LoginScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
+      <TextInput
+        placeholder="Nombre"
+        value={name}
+        onChangeText={setName}
+        placeholderTextColor="#888"
+        style={styles.input}
+      />
+
+      <TextInput
+        placeholder="Apellido"
+        value={surname}
+        onChangeText={setSurname}
+        placeholderTextColor="#888"
+        style={styles.input}
+      />
+
       <TextInput
         placeholder="Email"
         value={email}
@@ -93,14 +98,10 @@ const LoginScreen: React.FC = () => {
       />
 
       <Pressable
-        onPress={handleLogin}
+        onPress={handleRegister}
         style={styles.button}
       >
-        <Text style={styles.buttonText}>Ingresar</Text>
-      </Pressable>
-
-      <Pressable onPress={navigateToRegister}>
-        <Text style={{ color: 'blue', textAlign: 'center' }}>¿No tienes cuenta? Regístrate</Text>
+        <Text style={styles.buttonText}>Registrarse</Text>
       </Pressable>
     </View>
   );
@@ -120,9 +121,8 @@ const styles = StyleSheet.create({
     color: '#FFF',
   },
   button: {
-    backgroundColor: 'blue',
+    backgroundColor: 'green',
     padding: 10,
-    marginBottom: 10,
   },
   buttonText: {
     color: '#FFF',
@@ -134,4 +134,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default LoginScreen;
+export default RegisterScreen;
